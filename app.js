@@ -8,13 +8,21 @@
 // Requires phantom buildpack
 // heroku create --stack cedar --buildpack http://github.com/stomita/heroku-buildpack-phantomjs.git
 
-var page = require("webpage").create();
 var server = require("webserver").create();
 var system = require("system");
 var fs = require("fs");
 
 server.listen(system.env.PORT || 3003, function(request, response) {
-  renderPdfToTemp(request.post, function (err, tempFilename) {
+  
+  if (request.method == "GET") {
+    console.log()
+    var obj = { url : request.url.split("?")[1] };
+  } else {
+    var obj = { html : request.post };
+  }
+  
+  renderPdfToTemp(obj, function (err, tempFilename) {
+
     if (err) {
       console.log("Error: " + err);
       response.statusCode = 500;
@@ -28,13 +36,15 @@ server.listen(system.env.PORT || 3003, function(request, response) {
       response.close();
       fs.remove(tempFilename);
     }
+    
   });
 });
 
 console.log("Listening on port " + (system.env.PORT || 3003) + ".");
 
-function renderPdfToTemp(html, callback) {
+function renderPdfToTemp(obj, callback) {
 
+  var page = require("webpage").create();
   var tempFilename = "/tmp/" + guid() + ".pdf";
 
   page.paperSize = {
@@ -46,14 +56,22 @@ function renderPdfToTemp(html, callback) {
   // Zoom factor needs more research
   page.zoomFactor = .944;
 
-  page.content = html;
-
   page.onLoadFinished = function () {
     page.render(tempFilename);
     callback(null, tempFilename);
+    page.onError = undefined;
+    page.onLoadFinished = undefined;
   }
   page.onError = function (msg) {
     callback(msg);
+    page.onError = undefined;
+    page.onLoadFinished = undefined;
+  }
+
+  if (obj.html) {
+    page.content = obj.html;
+  } else {
+    page.open(obj.url);
   }
 }
 
