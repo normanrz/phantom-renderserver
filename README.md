@@ -12,13 +12,13 @@ heroku create --stack cedar --buildpack http://github.com/stomita/heroku-buildpa
 ## How to use
 Pass a URL as query string.
 
-```http
+```
 GET http://phantom-renderserver.herokuapp.com/?http://google.com/
 ```
 
 Send an HTML document as `POST` body.
 
-```http
+```
 POST http://phantom-renderserver.herokuapp.com/
 
 <!doctype html>
